@@ -12,8 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const routes = {
         'staff': [ { name: 'Absen', icon: 'bi-fingerprint', render: renderAbsenChoice }, { name: 'Riwayat', icon: 'bi-clock-history', render: renderRiwayat }, { name: 'Cuti', icon: 'bi-calendar4-week', render: renderCuti }, { name: 'Lembur', icon: 'bi-hourglass-split', render: renderLembur } ],
-        'kepala': [ { name: 'Dashboard', icon: 'bi-grid-1x2-fill', render: renderAdminHomeDashboard }, { name: 'Manajemen Staff', icon: 'bi-people-fill', render: renderAdminDataManagement }, { name: 'Lokasi Kantor', icon: 'bi-pin-map-fill', render: renderOfficeLocations }, { name: 'Persetujuan Cuti', icon: 'bi-check2-square', render: renderPersetujuanCuti, notification: true } ],
-        'super admin': [ { name: 'Dashboard', icon: 'bi-grid-1x2-fill', render: renderAdminHomeDashboard }, { name: 'Manajemen Staff', icon: 'bi-people-fill', render: renderAdminDataManagement }, { name: 'Lokasi Kantor', icon: 'bi-pin-map-fill', render: renderOfficeLocations } ]
+        'kepala': [ { name: 'Dashboard', icon: 'bi-grid-1x2-fill', render: renderAdminHomeDashboard }, { name: 'Manajemen Data', icon: 'bi-table', render: renderAdminDataManagement }, { name: 'Lokasi Kantor', icon: 'bi-pin-map-fill', render: renderOfficeLocations }, { name: 'Persetujuan Cuti', icon: 'bi-check2-square', render: renderPersetujuanCuti, notification: true } ],
+        'super admin': [ { name: 'Dashboard', icon: 'bi-grid-1x2-fill', render: renderAdminHomeDashboard }, { name: 'Manajemen Data', icon: 'bi-table', render: renderAdminDataManagement }, { name: 'Lokasi Kantor', icon: 'bi-pin-map-fill', render: renderOfficeLocations } ]
     };
 
     function setupLayout() {
@@ -165,7 +165,6 @@ document.addEventListener("DOMContentLoaded", () => {
         lat1 = safeParse(lat1); lon1 = safeParse(lon1);
         lat2 = safeParse(lat2); lon2 = safeParse(lon2);
         if (isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2)) return Infinity;
-
         const R = 6371e3; 
         const p1 = lat1 * Math.PI/180; const p2 = lat2 * Math.PI/180;
         const deltaP = p2 - p1; const deltaLon = lon2 - lon1;
@@ -290,7 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return rows.map(row => `<tr><td>${row.id || ''}</td><td>${row.name || ''}</td><td>${row.username || ''}</td><td>${row.role || ''}</td>${showActions && row.role === 'staff' ? `<td class="py-2"><div class="btn-group"><button class="btn btn-sm btn-outline-secondary change-pass-btn" data-id="${row.id}" data-name="${row.name}"><i class="bi bi-key-fill"></i></button><button class="btn btn-sm btn-outline-danger delete-btn" data-id="${row.id}" data-sheet="Users"><i class="bi bi-trash"></i></button></div></td>` : `<td></td>`}</tr>`).join('');
         }
         contentAreaEl.innerHTML = `<div class="card mb-4 shadow-sm"><div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2"><span>Data Staff</span><div class="d-flex gap-2"><div class="input-group" style="width: 250px;"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" class="form-control form-control-sm" placeholder="Cari nama staff..." id="user-search-input"></div><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-plus-circle me-1"></i> Tambah</button></div></div><div class="table-responsive text-nowrap"><table class="table table-hover table-striped align-middle"><thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Username</th><th>Role</th><th>Aksi</th></tr></thead><tbody id="users-table-body">${renderUserTable(users.filter(u=>u.role==='staff'))}</tbody></table></div></div>
-        <div class="card mb-4 shadow-sm"><h5 class="card-header bg-white">Data Absensi</h5><div class="table-responsive text-nowrap"><table class="table table-hover table-striped align-middle"><thead class="table-dark"><tr><th>ID</th><th>User ID</th><th>Check In</th><th>Branch</th><th>Check In Location</th></tr></thead><tbody>${attendance.map(row => `<tr><td>${row.id}</td><td>${row.user_id}</td><td>${row.check_in}</td><td>${row.branch}</td><td><div class="d-flex align-items-center"><span class="me-2 text-truncate" style="max-width:150px;">${row.check_in_location || ''}</span>${row.check_in_location && row.check_in_location.includes(',') ? `<a href="https://www.google.com/maps?q=${row.check_in_location}" target="_blank" class="btn btn-xs btn-outline-primary p-1"><i class="bi bi-geo-alt-fill"></i></a>` : ''}</div></td></tr>`).join('')}</tbody></table></div></div>`;
+        <div class="card mb-4 shadow-sm"><h5 class="card-header bg-white">Data Absensi</h5><div class="table-responsive text-nowrap"><table class="table table-hover table-striped align-middle"><thead class="table-dark"><tr><th>ID</th><th>User ID</th><th>Check In</th><th>Branch</th><th>Check In Location</th></tr></thead><tbody>${attendance.map(row => `<tr><td>${row.id}</td><td>${row.user_id}</td><td>${row.check_in}</td><td>${row.branch}</td><td><div class="d-flex align-items-center"><span class="me-2 text-truncate" style="max-width:150px;">${row.check_in_location || ''}</span>${row.check_in_location && row.check_in_location.includes(',') ? `<a href="https://maps.google.com/?q=${row.check_in_location}" target="_blank" class="btn btn-xs btn-outline-primary p-1"><i class="bi bi-geo-alt-fill"></i></a>` : ''}</div></td></tr>`).join('')}</tbody></table></div></div>`;
         
         document.getElementById('user-search-input').addEventListener('keyup', (e) => {
             const searchTerm = e.target.value.toLowerCase();
@@ -331,6 +330,7 @@ document.addEventListener("DOMContentLoaded", () => {
              const latInput = document.querySelector('#addLocationForm input[name="latitude"]');
              const lonInput = document.querySelector('#addLocationForm input[name="longitude"]');
              saveBtn.disabled = true;
+             statusEl.className = 'alert alert-info';
              statusEl.innerHTML = `<div class="spinner-border spinner-border-sm me-2"></div>Mendeteksi lokasi GPS Anda...`;
              
              navigator.geolocation.getCurrentPosition((position) => {
