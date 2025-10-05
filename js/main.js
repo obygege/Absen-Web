@@ -12,8 +12,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const routes = {
         'staff': [ { name: 'Absen', icon: 'bi-fingerprint', render: renderAbsenChoice }, { name: 'Riwayat', icon: 'bi-clock-history', render: renderRiwayat }, { name: 'Cuti', icon: 'bi-calendar4-week', render: renderCuti }, { name: 'Lembur', icon: 'bi-hourglass-split', render: renderLembur } ],
-        'kepala': [ { name: 'Dashboard', icon: 'bi-grid-1x2-fill', render: renderAdminHomeDashboard }, { name: 'Manajemen Data', icon: 'bi-table', render: renderAdminDataManagement }, { name: 'Lokasi Kantor', icon: 'bi-pin-map-fill', render: renderOfficeLocations }, { name: 'Persetujuan Cuti', icon: 'bi-check2-square', render: renderPersetujuanCuti, notification: true } ],
-        'super admin': [ { name: 'Dashboard', icon: 'bi-grid-1x2-fill', render: renderAdminHomeDashboard }, { name: 'Manajemen Data', icon: 'bi-table', render: renderAdminDataManagement }, { name: 'Lokasi Kantor', icon: 'bi-pin-map-fill', render: renderOfficeLocations } ]
+        'kepala': [ { name: 'Dashboard', icon: 'bi-grid-1x2-fill', render: renderAdminHomeDashboard }, { name: 'Manajemen Staff', icon: 'bi-people-fill', render: renderAdminDataManagement }, { name: 'Lokasi Kantor', icon: 'bi-pin-map-fill', render: renderOfficeLocations }, { name: 'Persetujuan Cuti', icon: 'bi-check2-square', render: renderPersetujuanCuti, notification: true } ],
+        'super admin': [ { name: 'Dashboard', icon: 'bi-grid-1x2-fill', render: renderAdminHomeDashboard }, { name: 'Manajemen Staff', icon: 'bi-people-fill', render: renderAdminDataManagement }, { name: 'Lokasi Kantor', icon: 'bi-pin-map-fill', render: renderOfficeLocations } ]
     };
 
     function setupLayout() {
@@ -106,14 +106,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     function renderAbsenChoice() {
-        contentAreaEl.innerHTML = `<div class="card shadow-sm"><div class="card-body text-center p-4"><h5 class="card-title mb-4">Pilih Metode Absensi</h5><div class="d-grid gap-3"><button id="absen-gps-choice" class="btn btn-primary btn-lg"><i class="bi bi-geo-alt-fill me-2"></i>Gunakan GPS & Peta</button><button id="absen-qr-choice" class="btn btn-outline-secondary btn-lg"><i class="bi bi-qr-code-scan me-2"></i>Scan QR Code Kantor</button></div></div></div>`;
+        contentAreaEl.innerHTML = `<div class="card shadow-sm"><div class="card-body text-center p-4"><h5 class="card-title mb-4">Pilih Metode Absensi</h5><div class="d-grid gap-3"><button id="absen-gps-choice" class="btn btn-primary btn-lg"><i class="bi bi-geo-alt-fill me-2"></i>Absen di Lokasi Kantor</button><button id="absen-qr-choice" class="btn btn-outline-secondary btn-lg"><i class="bi bi-qr-code-scan me-2"></i>Scan QR Code</button></div></div></div>`;
         document.getElementById('absen-gps-choice').addEventListener('click', renderAbsenGps);
         document.getElementById('absen-qr-choice').addEventListener('click', renderAbsenQr);
     }
 
     function renderAbsenGps() {
-        const { branches } = appData;
-        let branchOptions = branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+        const staffUser = appData.users.find(u => u.id === user.id);
+        const staffBranch = staffUser ? staffUser.branch : 'Tidak Terdaftar';
         contentAreaEl.innerHTML = `<div class="card shadow-sm"><div class="card-body text-center"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="card-title mb-0">Absensi via GPS</h5><button class="btn btn-sm btn-outline-secondary" id="back-to-choice"><i class="bi bi-arrow-left"></i> Kembali</button></div><div id="gps-content-wrapper"></div></div></div>`;
         document.getElementById('back-to-choice').addEventListener('click', renderAbsenChoice);
         
@@ -123,20 +123,19 @@ document.addEventListener("DOMContentLoaded", () => {
             e.target.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Mencari Sinyal GPS...`;
             e.target.disabled = true;
             
-            gpsWrapper.innerHTML = `<div class="p-2 bg-light rounded border mb-3"><small class="text-muted">Lokasi Anda Saat Ini:</small><p id="location-text" class="fw-bold mb-0">Mendeteksi lokasi...</p></div><div id="map" class="mb-3 w-100"></div><p id="clock" class="h4 fw-bold font-monospace mb-3"></p><div class="mb-3"><select id="branch-select" class="form-select"><option value="">-- Pilih Cabang --</option>${branchOptions}</select></div><div id="attendance-button-container" class="d-grid gap-2"></div>`;
+            gpsWrapper.innerHTML = `<div class="p-2 bg-light rounded border mb-3"><small class="text-muted">Lokasi Anda Saat Ini:</small><p id="location-text" class="fw-bold mb-0">Mendeteksi lokasi...</p></div><div id="map" class="mb-3 w-100"></div><p id="clock" class="h4 fw-bold font-monospace mb-3"></p><div class="mb-3"><label class="form-label">Cabang Anda</label><input type="text" id="branch-name" class="form-control" value="${staffBranch}" readonly></div><div id="attendance-button-container" class="d-grid gap-2"></div>`;
             
             initializeGeolocation();
             const clockEl = document.getElementById('clock');
             const clockInterval = setInterval(() => { if(clockEl) { clockEl.textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Makassar', hour12: false }); } else { clearInterval(clockInterval); } }, 1000);
-            document.getElementById('branch-select').addEventListener('change', updateAttendanceButtons);
             updateAttendanceButtons();
         });
     }
     
     function renderAbsenQr() {
-        const { branches } = appData;
-        let branchOptions = branches.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
-        contentAreaEl.innerHTML = `<div class="card shadow-sm"><div class="card-body text-center"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="card-title mb-0">Absensi via QR</h5><button class="btn btn-sm btn-outline-secondary" id="back-to-choice"><i class="bi bi-arrow-left"></i> Kembali</button></div><div class="mb-3"><select id="branch-select" class="form-select"><option value="">-- Pilih Cabang --</option>${branchOptions}</select></div><div id="qr-scanner-container" class="mt-2 border rounded p-2 bg-light"><div id="qr-reader" style="width:100%"></div></div></div></div>`;
+        const staffUser = appData.users.find(u => u.id === user.id);
+        const staffBranch = staffUser ? staffUser.branch : 'Tidak Terdaftar';
+        contentAreaEl.innerHTML = `<div class="card shadow-sm"><div class="card-body text-center"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="card-title mb-0">Absensi via QR</h5><button class="btn btn-sm btn-outline-secondary" id="back-to-choice"><i class="bi bi-arrow-left"></i> Kembali</button></div><div class="mb-3"><label class="form-label">Cabang Anda</label><input type="text" class="form-control" value="${staffBranch}" readonly></div><div id="qr-scanner-container" class="mt-2 border rounded p-2 bg-light"><div id="qr-reader" style="width:100%"></div></div></div></div>`;
         document.getElementById('back-to-choice').addEventListener('click', renderAbsenChoice);
         startQrScanner();
     }
@@ -178,20 +177,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById('attendance-button-container'); if (!container) return;
         const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Makassar" })).toISOString().slice(0, 10);
         const todayAttendance = appData.attendance?.find(a => new Date(a.date).toISOString().slice(0, 10) === today);
-        
-        let branchName;
-        if (!todayAttendance) {
-            const branchSelect = document.getElementById('branch-select');
-            branchName = branchSelect.value;
-            if (!branchName) { container.innerHTML = `<p class="alert alert-warning small">Silakan pilih cabang untuk memulai absensi.</p>`; return; }
-        } else {
-            branchName = todayAttendance.branch;
-        }
+        const staffUser = appData.users.find(u => u.id === user.id);
+        const staffBranch = staffUser ? staffUser.branch : null;
 
+        if (!staffBranch) { container.innerHTML = `<p class="alert alert-danger fw-bold">Anda tidak terdaftar di cabang manapun.</p>`; return; }
         if (!currentUserPosition) { container.innerHTML = `<p class="alert alert-info small">Mendeteksi lokasi GPS Anda...</p>`; return; }
         
-        const officeLocation = appData.locations.find(loc => loc.branch_name === branchName);
-        if (!officeLocation) { container.innerHTML = `<p class="alert alert-danger small">Lokasi untuk cabang '${branchName}' belum diatur Admin.</p>`; return; }
+        const officeLocation = appData.locations.find(loc => loc.branch_name === staffBranch);
+        if (!officeLocation) { container.innerHTML = `<p class="alert alert-danger small">Lokasi untuk cabang Anda ('${staffBranch}') belum diatur Admin.</p>`; return; }
         
         const distance = getDistance(currentUserPosition.latitude, currentUserPosition.longitude, officeLocation.latitude, officeLocation.longitude);
         if (distance > 100) {
@@ -212,11 +205,12 @@ document.addEventListener("DOMContentLoaded", () => {
     
     async function handleAttendanceClick(e) {
         const type = e.target.dataset.type;
-        const branchSelect = document.getElementById('branch-select');
+        const staffBranch = appData.users.find(u => u.id === user.id)?.branch;
         if (!currentUserPosition) { showToast('Lokasi GPS saat ini tidak ditemukan.', 'danger'); return; }
+        if (!staffBranch) { showToast('Cabang Anda tidak terdaftar.', 'danger'); return; }
         showToast('Memproses...', 'info');
         const location = `${currentUserPosition.latitude},${currentUserPosition.longitude}`;
-        const result = await postData("recordAttendance", { userId: user.id, type, location, branch: branchSelect.value });
+        const result = await postData("recordAttendance", { userId: user.id, type, location, branch: staffBranch });
         if (result.status === 'success') {
             showToast(result.message, 'success');
             await refreshData();
@@ -225,16 +219,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     function startQrScanner() {
-        const branchSelect = document.getElementById('branch-select');
+        const staffBranch = appData.users.find(u => u.id === user.id)?.branch;
+        if (!staffBranch) { showToast('Cabang Anda tidak terdaftar.', 'danger'); return; }
         const html5QrCode = new Html5Qrcode("qr-reader");
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } },
             async (decodedText) => {
-                if (!branchSelect.value) { showToast('Pilih cabang terlebih dahulu!', 'danger'); return; }
                 await html5QrCode.stop().catch(err => console.error(err));
                 showToast(`QR terdeteksi, memproses...`, 'info');
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     const { latitude, longitude } = position.coords; const location = `${latitude},${longitude}`;
-                    const result = await postData("recordAttendance", { userId: user.id, type: 'check_in', location: `QR Scan: ${decodedText.split('|')[0]} at ${location}`, branch: branchSelect.value });
+                    const result = await postData("recordAttendance", { userId: user.id, type: 'check_in', location: `QR Scan: ${decodedText.split('|')[0]} at ${location}`, branch: staffBranch });
                     if (result.status === 'success') {
                         showToast(result.message, 'success'); await refreshData();
                         renderAbsenChoice();
@@ -283,13 +277,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     
     function renderAdminDataManagement() {
-        const { users, attendance, leave, overtime } = appData;
+        const { users } = appData;
         const renderUserTable = (rows) => {
             const showActions = user.role === 'super admin' || user.role === 'kepala';
             return rows.map(row => `<tr><td>${row.id || ''}</td><td>${row.name || ''}</td><td>${row.username || ''}</td><td>${row.role || ''}</td>${showActions && row.role === 'staff' ? `<td class="py-2"><div class="btn-group"><button class="btn btn-sm btn-outline-secondary change-pass-btn" data-id="${row.id}" data-name="${row.name}"><i class="bi bi-key-fill"></i></button><button class="btn btn-sm btn-outline-danger delete-btn" data-id="${row.id}" data-sheet="Users"><i class="bi bi-trash"></i></button></div></td>` : `<td></td>`}</tr>`).join('');
         }
-        contentAreaEl.innerHTML = `<div class="card mb-4 shadow-sm"><div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2"><span>Data Staff</span><div class="d-flex gap-2"><div class="input-group" style="width: 250px;"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" class="form-control form-control-sm" placeholder="Cari nama staff..." id="user-search-input"></div><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-plus-circle me-1"></i> Tambah</button></div></div><div class="table-responsive text-nowrap"><table class="table table-hover table-striped align-middle"><thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Username</th><th>Role</th><th>Aksi</th></tr></thead><tbody id="users-table-body">${renderUserTable(users.filter(u=>u.role==='staff'))}</tbody></table></div></div>
-        <div class="card mb-4 shadow-sm"><h5 class="card-header bg-white">Data Absensi</h5><div class="table-responsive text-nowrap"><table class="table table-hover table-striped align-middle"><thead class="table-dark"><tr><th>ID</th><th>User ID</th><th>Check In</th><th>Branch</th><th>Check In Location</th></tr></thead><tbody>${attendance.map(row => `<tr><td>${row.id}</td><td>${row.user_id}</td><td>${row.check_in}</td><td>${row.branch}</td><td><div class="d-flex align-items-center"><span class="me-2 text-truncate" style="max-width:150px;">${row.check_in_location || ''}</span>${row.check_in_location && row.check_in_location.includes(',') ? `<a href="https://maps.google.com/?q=${row.check_in_location}" target="_blank" class="btn btn-xs btn-outline-primary p-1"><i class="bi bi-geo-alt-fill"></i></a>` : ''}</div></td></tr>`).join('')}</tbody></table></div></div>`;
+        contentAreaEl.innerHTML = `<div class="card mb-4 shadow-sm"><div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2"><span>Data Staff</span><div class="d-flex gap-2"><div class="input-group" style="width: 250px;"><span class="input-group-text"><i class="bi bi-search"></i></span><input type="text" class="form-control form-control-sm" placeholder="Cari nama staff..." id="user-search-input"></div><button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addUserModal"><i class="bi bi-plus-circle me-1"></i> Tambah</button></div></div><div class="table-responsive text-nowrap"><table class="table table-hover table-striped align-middle"><thead class="table-dark"><tr><th>ID</th><th>Name</th><th>Username</th><th>Role</th><th>Aksi</th></tr></thead><tbody id="users-table-body">${renderUserTable(users.filter(u=>u.role==='staff'))}</tbody></table></div></div>`;
         
         document.getElementById('user-search-input').addEventListener('keyup', (e) => {
             const searchTerm = e.target.value.toLowerCase();
@@ -314,7 +307,7 @@ document.addEventListener("DOMContentLoaded", () => {
              let tableHeaders = [...headers]; if (showActions) tableHeaders.push("Aksi");
              return `<div class="card mb-4 shadow-sm"><div class="card-header bg-white d-flex justify-content-between align-items-center"><span>${title}</span>${addBtn ? `<button class="btn btn-primary btn-sm" id="add-location-btn"><i class="bi bi-plus-circle me-1"></i> Tambah Lokasi</button>`: ''}</div><div class="table-responsive text-nowrap"><table class="table table-hover table-striped align-middle"><thead class="table-dark"><tr>${tableHeaders.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${keys.map(key => `<td>${row[key] || ''}</td>`).join('')}${showActions ? `<td class="py-2"><button class="btn btn-sm btn-outline-danger delete-btn" data-id="${row.id}" data-sheet="${sheetName}"><i class="bi bi-trash"></i></button></td>` : ''}</tr>`).join('')}</tbody></table></div></div>`;
         };
-        contentAreaEl.innerHTML = renderTable('Daftar Lokasi Kantor', ['ID', 'Branch Name', 'Latitude', 'Longitude'], locations, 'Locations', true);
+        contentAreaEl.innerHTML = renderTable('Daftar Lokasi Kantor', ['ID', 'Branch Name', 'Titik Koordinat'], locations, 'Locations', true);
         document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', handleDelete));
         document.getElementById('add-location-btn').addEventListener('click', () => {
             const form = document.getElementById('addLocationForm');
