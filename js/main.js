@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!officeLocation) { container.innerHTML = `<p class="alert alert-danger small">Lokasi untuk cabang Anda ('${staffBranch}') belum diatur Admin.</p>`; return; }
         
         const distance = getDistance(currentUserPosition.latitude, currentUserPosition.longitude, officeLocation.latitude, officeLocation.longitude);
-        if (distance > 100) {
+        if (distance > 500) {
             container.innerHTML = `<p class="alert alert-danger fw-bold">Anda tidak berada di lokasi kantor. (Jarak: ${Math.round(distance)} meter)</p>`;
             return;
         }
